@@ -39,7 +39,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.logoContainer}>
             <View style={styles.logo}>
-              <Image source={require('../../assets/images/icon.jpg')} style={{ width: 60, height: 60, resizeMode: 'contain' }} />
+              <Image source={require('../../assets/images/icon.jpg')} style={styles.logoImage} />
             </View>
           </View>
           <Text style={styles.title}>Control de Accesos</Text>
@@ -190,5 +190,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333333',
     marginTop: 4,
+  },
+  logoImage: {
+    width: 80, // o el tamaño que prefieras
+    height: 80,
+    resizeMode: 'contain'
   },
 });

@@ -1,63 +1,61 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, Platform } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { getUserByPlate, logAccess, getLastUserEvent } from '@/lib/supabase';
 import { Car, Bike, CircleCheck as CheckCircle, Circle as XCircle, Camera } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import React from 'react';
 
 export default function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const [lastScan, setLastScan] = useState('');
   const [userInfo, setUserInfo] = useState<any>(null);
-  const [scanResult, setScanResult] = useState<'entrada' | 'salida' | null>(null);
+  const [scanResult, setScanResult] = useState<string | null>(null);
+  const [lastScan, setLastScan] = useState('');
+
+  useFocusEffect(
+    React.useCallback(() => {
+      setScanned(false);
+      setUserInfo(null);
+      setScanResult(null);
+      setLastScan('');
+      return () => {};
+    }, [])
+  );
 
   const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
     if (scanned || data === lastScan) return;
-    
     setScanned(true);
     setLastScan(data);
-
-    // Get user by plate
     const userResult = await getUserByPlate(data);
-    
     if (!userResult.success || !userResult.data) {
       Alert.alert('Error', 'Vehículo no encontrado en el sistema');
-      setTimeout(() => setScanned(false), 3000);
+      setTimeout(() => setScanned(false), 5000);
       return;
     }
-
     const user = userResult.data;
     setUserInfo(user);
-
-    // Get last event
     const lastEventResult = await getLastUserEvent(user.id);
     const lastEvent = lastEventResult.data?.event;
-    
-    // Determine new event
     const newEvent = !lastEvent || lastEvent === 'salida' ? 'entrada' : 'salida';
     setScanResult(newEvent);
-
-    // Log the access
     const logResult = await logAccess(user.id, newEvent);
-    
     if (logResult.success) {
       const message = newEvent === 'entrada' 
         ? `✅ Entrada registrada para ${user.name}`
         : `🚪 Salida registrada para ${user.name}`;
-      
       Alert.alert('Acceso Registrado', message);
     } else {
       Alert.alert('Error', 'Error al registrar el acceso');
     }
-
-    // Reset after 5 seconds
     setTimeout(() => {
       setScanned(false);
       setUserInfo(null);
       setScanResult(null);
+      setLastScan('');
     }, 5000);
   };
 
@@ -96,7 +94,6 @@ export default function ScanScreen() {
           {scanned ? 'Procesando...' : 'Apunta la cámara al código QR'}
         </Text>
       </View>
-
       <View style={styles.cameraContainer}>
         <CameraView
           style={styles.camera}
@@ -113,7 +110,6 @@ export default function ScanScreen() {
           </View>
         </CameraView>
       </View>
-
       {userInfo && (
         <Card style={styles.resultCard}>
           <View style={styles.resultHeader}>
@@ -131,7 +127,6 @@ export default function ScanScreen() {
               {scanResult === 'entrada' ? 'ENTRADA' : 'SALIDA'}
             </Text>
           </View>
-
           <View style={styles.userInfo}>
             <View style={styles.vehicleIcon}>
               {userInfo.vehicle_type === 'Carro' ? (
@@ -147,9 +142,15 @@ export default function ScanScreen() {
               </Text>
             </View>
           </View>
+          <Button onPress={() => {
+            setScanned(false);
+            setUserInfo(null);
+            setScanResult(null);
+          }} style={{ marginTop: 16 }}>
+            Volver a escanear
+          </Button>
         </Card>
       )}
-
       <Card style={styles.instructionsCard}>
         <Text style={styles.instructionsTitle}>Instrucciones</Text>
         <Text style={styles.instructionsText}>

@@ -27,7 +27,7 @@ export interface AccessLog {
 export async function registerUser(name: string, vehicleType: string, plate: string) {
   try {
     const { data, error } = await supabase
-      .table('users')
+      .from('users')
       .insert([
         {
           name,
@@ -49,7 +49,7 @@ export async function registerUser(name: string, vehicleType: string, plate: str
 export async function getUserByPlate(plate: string) {
   try {
     const { data, error } = await supabase
-      .table('users')
+      .from('users')
       .select('*')
       .eq('plate', plate.toUpperCase())
       .single();
@@ -64,7 +64,7 @@ export async function getUserByPlate(plate: string) {
 export async function logAccess(userId: number, event: 'entrada' | 'salida') {
   try {
     const { data, error } = await supabase
-      .table('access_log')
+      .from('access_log')
       .insert([
         {
           user_id: userId,
@@ -84,7 +84,7 @@ export async function logAccess(userId: number, event: 'entrada' | 'salida') {
 export async function getLastUserEvent(userId: number) {
   try {
     const { data, error } = await supabase
-      .table('access_log')
+      .from('access_log')
       .select('event')
       .eq('user_id', userId)
       .order('id', { ascending: false })
@@ -101,7 +101,7 @@ export async function getLastUserEvent(userId: number) {
 export async function getAllUsers() {
   try {
     const { data, error } = await supabase
-      .table('users')
+      .from('users')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -115,7 +115,7 @@ export async function getAllUsers() {
 export async function getAccessLogs() {
   try {
     const { data, error } = await supabase
-      .table('access_log')
+      .from('access_log')
       .select(`
         id,
         event,
@@ -138,13 +138,13 @@ export async function deleteUser(userId: number) {
   try {
     // First delete access logs
     await supabase
-      .table('access_log')
+      .from('access_log')
       .delete()
       .eq('user_id', userId);
 
     // Then delete user
     const { error } = await supabase
-      .table('users')
+      .from('users')
       .delete()
       .eq('id', userId);
 
